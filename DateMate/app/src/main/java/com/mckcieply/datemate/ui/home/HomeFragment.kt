@@ -1,6 +1,7 @@
 package com.mckcieply.datemate.ui.home
 
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.graphics.Color
 import android.os.Bundle
 import android.util.TypedValue
@@ -41,11 +42,11 @@ class HomeFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.startTimeInput.setOnClickListener{
-            showDateTimePickerDialog(true)
+            showDatePickerDialog(true)
         }
 
         binding.endTimeInput.setOnClickListener{
-            showDateTimePickerDialog(false)
+            showDatePickerDialog(false)
         }
 
 
@@ -53,8 +54,6 @@ class HomeFragment : Fragment() {
             val title = binding.titleInput.text.toString()
             val description = binding.descriptionInput.text.toString()
             val location = binding.locationInput.text.toString()
-//            val start = binding.startTimeInput.text.toString()
-//            val end = binding.endTimeInput.text.toString()
 
             val summary = """
                 Title: $title
@@ -68,7 +67,7 @@ class HomeFragment : Fragment() {
         }
     }
 
-    private fun showDateTimePickerDialog(isStartTime: Boolean) {
+    private fun showDatePickerDialog(isStartTime: Boolean) {
         val calendar = Calendar.getInstance()
 
         // DatePickerDialog setup
@@ -76,14 +75,7 @@ class HomeFragment : Fragment() {
             // Set the date based on user input
             val date = "$year-${month + 1}-$dayOfMonth"
 
-            if (isStartTime) {
-                startDate = date
-                binding.startTimeInput.setText(date)
-            } else {
-                endDate = date
-                binding.endTimeInput.setText(date)
-            }
-//            showTimePickerDialog(isStartTime, date) // Show TimePicker after date selection
+            showTimePickerDialog(isStartTime, date)
         }
 
         val datePickerDialog = DatePickerDialog(
@@ -93,6 +85,32 @@ class HomeFragment : Fragment() {
             calendar.get(Calendar.DAY_OF_MONTH)
         )
         datePickerDialog.show()
+    }
+
+    private fun showTimePickerDialog(isStartTime: Boolean, date: String) {
+        val calendar = Calendar.getInstance()
+
+        // TimePickerDialog setup
+        val timeSetListener = TimePickerDialog.OnTimeSetListener { _, hourOfDay, minute ->
+            val time = "$hourOfDay:$minute"
+            val fullDateTime = "$date $time"
+
+            if (isStartTime) {
+                startDate = fullDateTime
+                binding.startTimeInput.setText(fullDateTime)
+            } else {
+                endDate = fullDateTime
+                binding.endTimeInput.setText(fullDateTime)
+            }
+        }
+
+        val timePickerDialog = TimePickerDialog(
+            requireContext(), timeSetListener,
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            true
+        )
+        timePickerDialog.show()
     }
 
     private fun showCustomToast(message: String) {
