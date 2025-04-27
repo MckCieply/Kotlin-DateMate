@@ -64,7 +64,7 @@ class HomeFragment : Fragment() {
                 To: $endDate
             """.trimIndent()
 
-            Toast.makeText(requireContext(), summary, Toast.LENGTH_LONG).show()
+            showCustomToast(summary)
         }
     }
 
@@ -94,6 +94,31 @@ class HomeFragment : Fragment() {
         )
         datePickerDialog.show()
     }
+
+    private fun showCustomToast(message: String) {
+        // Create the Toast
+        val toast = Toast(requireContext())
+        toast.duration = Toast.LENGTH_LONG
+
+        // Create a TextView and set it as the toast view
+        val toastText = TextView(requireContext())
+        toastText.text = message
+        toastText.setPadding(16, 16, 16, 16)  // Add padding for better readability
+        toastText.setBackgroundColor(Color.BLACK)  // Set background color to black
+        toastText.setTextColor(Color.WHITE)  // Set text color to white
+
+        // Ensure that LayoutParams is set
+        val params = toastText.layoutParams ?: ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
+
+        // Optional: Set maximum width for the TextView
+        val maxWidth = 800  // You can adjust this value depending on your screen size
+        params.width = maxWidth
+        toastText.layoutParams = params
+
+        toast.view = toastText  // Set the custom TextView as the toast view
+        toast.show()
+    }
+
 
     override fun onDestroyView() {
         super.onDestroyView()
