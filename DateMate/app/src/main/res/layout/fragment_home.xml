@@ -33,13 +33,17 @@
             android:id="@+id/startTimeInput"
             android:hint="Start Time (e.g., 2025-04-26T10:00)"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:focusable="false"
+            android:clickable="true"/>
 
         <EditText
             android:id="@+id/endTimeInput"
             android:hint="End Time (e.g., 2025-04-26T11:00)"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:focusable="false"
+            android:clickable="true"/>
 
         <Button
             android:id="@+id/submitButton"
