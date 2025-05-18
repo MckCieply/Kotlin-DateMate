@@ -21,6 +21,11 @@ import java.net.HttpURLConnection
 import java.net.URL
 import java.net.URLEncoder
 
+import okhttp3.*
+
+import org.json.JSONObject
+
+
 
 private lateinit var googleSignInClient: GoogleSignInClient
 
@@ -58,6 +63,7 @@ class MainActivity : AppCompatActivity() {
 
         // Trigger sign-in
         startActivityForResult(googleSignInClient.signInIntent, 100)
+
 
 
     }
@@ -112,8 +118,28 @@ class MainActivity : AppCompatActivity() {
                 val response = conn.inputStream.bufferedReader().use { it.readText() }
 
                 withContext(Dispatchers.Main) {
-                    // TODO: parse response JSON to get access_token, refresh_token, expires_in
-                    println("Token response: $response")
+                    try {
+                        val json = JSONObject(response)
+                        val accessToken = json.getString("access_token")
+                        val refreshToken = json.optString("refresh_token", "")
+                        val expiresIn = json.getInt("expires_in")
+
+                        println("✅ Access Token: $accessToken")
+                        println("🔁 Refresh Token: $refreshToken")
+                        println("⏳ Expires in: $expiresIn seconds")
+
+                        fetchCalendarEvent(accessToken) { result ->
+                            runOnUiThread {
+                                Log.d("CalendarEvents", result)
+                                // Optional: Show in UI or Toast
+                            }
+                        }
+                        // You can now store the token or use it in the next stage
+
+                    } catch (e: Exception) {
+                        e.printStackTrace()
+                        println("❌ Failed to parse token response")
+                    }
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -121,6 +147,34 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+
+    fun fetchCalendarEvent(accessToken: String, onResult: (String) -> Unit){
+        val client = OkHttpClient()
+
+        val request = Request.Builder()
+            .url("https://www.googleapis.com/calendar/v3/calendars/primary/events")
+            .addHeader("Authorization", "Bearer $accessToken")
+            .build()
+
+        Log.d("CalendarAPI", "Starting request to fetch events")
+        client.newCall(request).enqueue(object : Callback {
+            override fun onResponse(call: Call, response: Response) {
+                Log.d("CalendarAPI", "Received response: ${response.code}")
+                response.use {
+                    if (!it.isSuccessful) {
+                        onResult("Unexpected code $it")
+                    } else {
+                        val responseBody = it.body?.string()
+                        onResult(responseBody ?: "Empty response")
+                    }
+                }
+            }
+
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("Calendar", "Error fetching events", e)
+            }
+        })
     }
 
 
