@@ -67,8 +67,14 @@ object GoogleAPIManager {
     fun fetchCalendarEvent(accessToken: String, onResult: (String) -> Unit) {
         val client = OkHttpClient()
 
+        val url = "https://www.googleapis.com/calendar/v3/calendars/primary/events" +
+                "?orderBy=startTime" +
+                "&singleEvents=true" +
+                "&timeMin=${java.time.ZonedDateTime.now().toInstant()}" +
+                "&maxResults=20"
+
         val request = Request.Builder()
-            .url("https://www.googleapis.com/calendar/v3/calendars/primary/events")
+            .url(url)
             .addHeader("Authorization", "Bearer $accessToken")
             .build()
 

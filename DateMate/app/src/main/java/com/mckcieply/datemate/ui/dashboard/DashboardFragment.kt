@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
+import com.mckcieply.datemate.CalendarEventModel
 import com.mckcieply.datemate.GoogleAPIManager
 import com.mckcieply.datemate.MainActivity
 import com.mckcieply.datemate.databinding.FragmentDashboardBinding
@@ -33,28 +34,42 @@ class DashboardFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Clear any existing views
         binding.linearLayoutContainer.removeAllViews()
 
-        // Get the access token from MainActivity
         val accessToken = (activity as MainActivity).accessToken
 
         if (accessToken != null) {
             GoogleAPIManager.fetchCalendarEvent(accessToken) { response ->
                 try {
+                    val events = mutableListOf<CalendarEventModel>()
                     val json = JSONObject(response)
                     val items = json.getJSONArray("items")
 
-                    // Update UI on main thread
-                    activity?.runOnUiThread {
-                        binding.linearLayoutContainer.removeAllViews() // Clear again before adding
-                        for (i in 0 until items.length()) {
-                            val event = items.getJSONObject(i)
-                            val summary = event.optString("summary", "No Title")
+                    for (i in 0 until items.length()) {
+                        val item = items.getJSONObject(i)
 
+                        val summary = item.optString("summary", "No Title")
+                        val start = item.getJSONObject("start")
+                        val startTime = start.optString("dateTime", start.optString("date", "Unknown start time"))
+                        val location = item.optString("location", null)
+                        val description = item.optString("description", null)
+
+                        events.add(CalendarEventModel(summary, startTime, location, description))
+                    }
+
+                    // Update UI
+                    activity?.runOnUiThread {
+                        binding.linearLayoutContainer.removeAllViews()
+
+                        for (event in events) {
                             val textView = TextView(requireContext()).apply {
-                                text = summary
-                                textSize = 18f
+                                text = """
+                                🔹 ${event.summary}
+                                🕒 ${event.startTime}
+                                📍 ${event.location ?: "N/A"}
+                                📝 ${event.description ?: "None"}
+                            """.trimIndent()
+                                textSize = 16f
                                 setPadding(16, 16, 16, 16)
                             }
                             binding.linearLayoutContainer.addView(textView)
@@ -62,27 +77,22 @@ class DashboardFragment : Fragment() {
                     }
                 } catch (e: Exception) {
                     Log.e("DashboardFragment", "Failed to parse events", e)
-                    activity?.runOnUiThread {
-                        binding.linearLayoutContainer.removeAllViews()
-                        val errorView = TextView(requireContext()).apply {
-                            text = "Failed to load events"
-                            textSize = 18f
-                            setPadding(16, 16, 16, 16)
-                        }
-                        binding.linearLayoutContainer.addView(errorView)
-                    }
+                    showError("Failed to load events")
                 }
             }
         } else {
-            // No token: show message
-            binding.linearLayoutContainer.removeAllViews()
-            val noTokenView = TextView(requireContext()).apply {
-                text = "No access token available"
-                textSize = 18f
-                setPadding(16, 16, 16, 16)
-            }
-            binding.linearLayoutContainer.addView(noTokenView)
+            showError("No access token available")
         }
+    }
+
+    private fun showError(message: String) {
+        binding.linearLayoutContainer.removeAllViews()
+        val errorView = TextView(requireContext()).apply {
+            text = message
+            textSize = 18f
+            setPadding(16, 16, 16, 16)
+        }
+        binding.linearLayoutContainer.addView(errorView)
     }
 
     override fun onDestroyView() {
