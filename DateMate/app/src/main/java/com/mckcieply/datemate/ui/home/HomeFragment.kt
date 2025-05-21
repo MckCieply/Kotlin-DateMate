@@ -18,6 +18,9 @@ import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
 
+/**
+ * Fragment for creating and submitting Google Calendar events.
+ */
 class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
@@ -37,61 +40,75 @@ class HomeFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        setupListeners()
+    }
 
+    /**
+     * Sets up input and button click listeners.
+     */
+    private fun setupListeners() {
         binding.startTimeInput.setOnClickListener {
-            showDatePickerDialog(true)
+            showDatePickerDialog(isStartTime = true)
         }
 
         binding.endTimeInput.setOnClickListener {
-            showDatePickerDialog(false)
+            showDatePickerDialog(isStartTime = false)
         }
 
         binding.submitButton.setOnClickListener {
-            val title = binding.titleInput.text.toString()
-            val description = binding.descriptionInput.text.toString()
-            val location = binding.locationInput.text.toString()
-
-            if (startDate.isEmpty() || endDate.isEmpty() || title.isEmpty()) {
-                Toast.makeText(requireContext(), "Please enter title and select start & end times", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            val accessToken = (activity as? MainActivity)?.accessToken
-            if (accessToken == null) {
-                Toast.makeText(requireContext(), "No access token available. Please sign in.", Toast.LENGTH_LONG).show()
-                return@setOnClickListener
-            }
-
-            // Convert date strings to RFC3339 format for Google Calendar
-            val startDateTimeRFC3339 = convertToRFC3339(startDate)
-            val endDateTimeRFC3339 = convertToRFC3339(endDate)
-
-            if (startDateTimeRFC3339 == null || endDateTimeRFC3339 == null) {
-                Toast.makeText(requireContext(), "Invalid date/time format", Toast.LENGTH_SHORT).show()
-                return@setOnClickListener
-            }
-
-            // Call the create event function
-            GoogleAPIManager.createCalendarEvent(
-                accessToken = accessToken,
-                title = "DateMate: $title",
-                description = description,
-                location = location,
-                startDateTime = startDateTimeRFC3339,
-                endDateTime = endDateTimeRFC3339
-            ) { success, response ->
-                activity?.runOnUiThread {
-                    if (success) {
-                        showCustomToast("Event created successfully!")
-                    } else {
-                        showCustomToast("Failed to create event.")
-                        Log.e("HomeFragment", "Create event failed: $response")
-                    }
-                }
-            }
+            handleSubmit()
         }
     }
 
+    /**
+     * Handles event submission to Google Calendar.
+     */
+    private fun handleSubmit() {
+        val title = binding.titleInput.text.toString()
+        val description = binding.descriptionInput.text.toString()
+        val location = binding.locationInput.text.toString()
+        val startDateTimeRFC3339 = startDate.toRFC3339() ?: return showInvalidDateToast()
+        val endDateTimeRFC3339 = endDate.toRFC3339() ?: return showInvalidDateToast()
+
+        if (!validateInputs(title)) return
+
+        val accessToken = (activity as? MainActivity)?.accessToken
+        if (accessToken == null) {
+            showCustomToast("No access token available. Please sign in.")
+            return
+        }
+
+        GoogleAPIManager.createCalendarEvent(
+            accessToken = accessToken,
+            title = title,
+            description = description,
+            location = location,
+            startDateTime = startDateTimeRFC3339,
+            endDateTime = endDateTimeRFC3339,
+            callback = ::handleEventResult
+        )
+    }
+
+    /**
+     * Validates required input fields.
+     */
+    private fun validateInputs(title: String): Boolean {
+        return if (startDate.isEmpty() || endDate.isEmpty() || title.isEmpty()) {
+            showCustomToast("Please enter title and select start & end times")
+            false
+        } else true
+    }
+
+    /**
+     * Shows toast for invalid date/time input.
+     */
+    private fun showInvalidDateToast() {
+        showCustomToast("Invalid date/time format")
+    }
+
+    /**
+     * Opens a DatePicker dialog and then shows a TimePicker.
+     */
     private fun showDatePickerDialog(isStartTime: Boolean) {
         val calendar = Calendar.getInstance()
         val dateSetListener = DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
@@ -108,6 +125,9 @@ class HomeFragment : Fragment() {
         ).show()
     }
 
+    /**
+     * Opens a TimePicker dialog for the selected date.
+     */
     private fun showTimePickerDialog(isStartTime: Boolean, date: String) {
         val calendar = Calendar.getInstance()
         val timeSetListener = TimePickerDialog.OnTimeSetListener { _, hourOfDay, minute ->
@@ -132,11 +152,13 @@ class HomeFragment : Fragment() {
         ).show()
     }
 
-    private fun convertToRFC3339(dateTime: String): String? {
-        // Input example: "2025-5-21 14:30"
+    /**
+     * Converts date string to RFC 3339 format for Google Calendar.
+     */
+    private fun String.toRFC3339(): String? {
         return try {
             val inputFormat = SimpleDateFormat("yyyy-M-d HH:mm", Locale.getDefault())
-            val date = inputFormat.parse(dateTime)
+            val date = inputFormat.parse(this)
             val outputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
             outputFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
             date?.let { outputFormat.format(it) }
@@ -146,6 +168,9 @@ class HomeFragment : Fragment() {
         }
     }
 
+    /**
+     * Shows a styled toast with given message.
+     */
     private fun showCustomToast(message: String) {
         val toast = Toast(requireContext())
         toast.duration = Toast.LENGTH_LONG
@@ -161,8 +186,23 @@ class HomeFragment : Fragment() {
         toast.show()
     }
 
+    /**
+     * Handles the result of event creation.
+     */
+    private fun handleEventResult(success: Boolean, response: String?) {
+        activity?.runOnUiThread {
+            showCustomToast(
+                if (success) "Event created successfully!" else "Failed to create event."
+            )
+            if (!success) {
+                Log.e("HomeFragment", "Create event failed: $response")
+            }
+        }
+    }
+
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
     }
 }
+
