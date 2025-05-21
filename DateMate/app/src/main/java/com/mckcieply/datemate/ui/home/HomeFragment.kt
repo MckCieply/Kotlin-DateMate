@@ -72,14 +72,7 @@ class HomeFragment : Fragment() {
 
         if (!validateInputs(title)) return
 
-        val accessToken = (activity as? MainActivity)?.accessToken
-        if (accessToken == null) {
-            showCustomToast("No access token available. Please sign in.")
-            return
-        }
-
         GoogleAPIManager.createCalendarEvent(
-            accessToken = accessToken,
             title = title,
             description = description,
             location = location,

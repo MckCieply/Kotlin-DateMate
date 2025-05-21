@@ -19,9 +19,7 @@ import com.mckcieply.datemate.databinding.ActivityMainBinding
 class MainActivity : AppCompatActivity() {
 
     var accessToken: String? = null
-
     private lateinit var binding: ActivityMainBinding
-
     private lateinit var googleSignInClient: GoogleSignInClient
 
     private val signInLauncher = registerForActivityResult(
@@ -34,23 +32,20 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Bottom nav
+        // Inflate layout
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        // Navigation setup
         val navView: BottomNavigationView = binding.navView
-
         val navController = findNavController(R.id.nav_host_fragment_activity_main)
         val appBarConfiguration = AppBarConfiguration(
-            setOf(
-                R.id.navigation_home, R.id.navigation_dashboard
-            )
+            setOf(R.id.navigation_home, R.id.navigation_dashboard)
         )
         setupActionBarWithNavController(navController, appBarConfiguration)
         navView.setupWithNavController(navController)
 
-
-        // Configure sign-in to request the user's ID, email address, and basic profile.
+        // Configure Google Sign-In
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
             .requestScopes(Scope("https://www.googleapis.com/auth/calendar.events"))
@@ -59,7 +54,7 @@ class MainActivity : AppCompatActivity() {
 
         googleSignInClient = GoogleSignIn.getClient(this, gso)
 
-        // Start the sign-in intent
+        // Launch sign-in flow
         val signInIntent = googleSignInClient.signInIntent
         signInLauncher.launch(signInIntent)
     }
@@ -75,10 +70,12 @@ class MainActivity : AppCompatActivity() {
                     authCode = authCode,
                     clientId = getString(R.string.web_client_id),
                     clientSecret = getString(R.string.web_client_secret)
-                ) { accessToken ->
-                    if (accessToken != null) {
-                        this.accessToken = accessToken
-                        GoogleAPIManager.fetchCalendarEvent(accessToken) { result ->
+                ) { token ->
+                    if (token != null) {
+                        accessToken = token
+                        GoogleAPIManager.setAccessToken(token)
+                        Log.d("MainActivity", "Access token received: $token")
+                        GoogleAPIManager.fetchCalendarEvent() { result ->
                             Log.d("CalendarEvents", result)
                         }
                     } else {
@@ -88,7 +85,6 @@ class MainActivity : AppCompatActivity() {
             } else {
                 Log.e("MainActivity", "No auth code received")
             }
-
         } catch (e: ApiException) {
             Log.e("MainActivity", "Sign-in failed", e)
         }
