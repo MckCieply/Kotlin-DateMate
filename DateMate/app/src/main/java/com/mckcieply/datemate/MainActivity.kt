@@ -18,6 +18,8 @@ import com.mckcieply.datemate.databinding.ActivityMainBinding
 
 class MainActivity : AppCompatActivity() {
 
+    var accessToken: String? = null
+
     private lateinit var binding: ActivityMainBinding
 
     private lateinit var googleSignInClient: GoogleSignInClient
@@ -75,6 +77,7 @@ class MainActivity : AppCompatActivity() {
                     clientSecret = getString(R.string.web_client_secret)
                 ) { accessToken ->
                     if (accessToken != null) {
+                        this.accessToken = accessToken
                         GoogleAPIManager.fetchCalendarEvent(accessToken) { result ->
                             Log.d("CalendarEvents", result)
                         }
