@@ -3,6 +3,7 @@ package com.mckcieply.datemate
 import android.util.Log
 import kotlinx.coroutines.*
 import okhttp3.*
+import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import org.json.JSONObject
 import java.io.IOException
 import java.net.HttpURLConnection
@@ -11,6 +12,7 @@ import java.net.URLEncoder
 
 
 object GoogleAPIManager {
+    private val client = OkHttpClient()
     fun exchangeAuthCodeForTokens(
         authCode: String,
         clientId: String,
@@ -65,7 +67,6 @@ object GoogleAPIManager {
     }
 
     fun fetchCalendarEvent(accessToken: String, onResult: (String) -> Unit) {
-        val client = OkHttpClient()
 
         val url = "https://www.googleapis.com/calendar/v3/calendars/primary/events" +
                 "?orderBy=startTime" +
@@ -94,4 +95,60 @@ object GoogleAPIManager {
             }
         })
     }
+
+    fun createCalendarEvent(
+        accessToken: String,
+        title: String,
+        description: String?,
+        location: String?,
+        startDateTime: String,
+        endDateTime: String,
+        callback: (Boolean, String?) -> Unit
+    ) {
+        val url = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
+
+        val eventJson = JSONObject().apply {
+            put("summary", "DateMate: $title")
+            put("description", description ?: "")
+            put("location", location ?: "")
+            put("start", JSONObject().apply {
+                put("dateTime", startDateTime)
+                put("timeZone", "UTC")
+            })
+            put("end", JSONObject().apply {
+                put("dateTime", endDateTime)
+                put("timeZone", "UTC")
+            })
+        }
+
+        val requestBody = RequestBody.create(
+            "application/json; charset=utf-8".toMediaTypeOrNull(),
+            eventJson.toString()
+        )
+
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("Authorization", "Bearer $accessToken")
+            .addHeader("Content-Type", "application/json")
+            .post(requestBody)
+            .build()
+
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                e.printStackTrace()
+                callback(false, e.message)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (it.isSuccessful) {
+                        callback(true, it.body?.string())
+                    } else {
+                        callback(false, it.body?.string())
+                    }
+                }
+            }
+        })
+    }
 }
+

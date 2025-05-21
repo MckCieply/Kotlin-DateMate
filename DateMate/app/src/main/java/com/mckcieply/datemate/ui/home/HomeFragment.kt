@@ -4,28 +4,28 @@ import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.graphics.Color
 import android.os.Bundle
-import android.util.TypedValue
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import com.mckcieply.datemate.GoogleAPIManager
+import com.mckcieply.datemate.MainActivity
 import com.mckcieply.datemate.databinding.FragmentHomeBinding
+import java.text.SimpleDateFormat
 import java.util.Calendar
+import java.util.Locale
 
 class HomeFragment : Fragment() {
 
-    // ViewBinding reference for fragment layout
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
 
     private var startDate = ""
     private var endDate = ""
 
-    /**
-     * Inflates the layout using view binding.
-     */
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
@@ -35,64 +35,83 @@ class HomeFragment : Fragment() {
         return binding.root
     }
 
-    /**
-     * Sets up click listener to display entered form data.
-     */
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.startTimeInput.setOnClickListener{
+        binding.startTimeInput.setOnClickListener {
             showDatePickerDialog(true)
         }
 
-        binding.endTimeInput.setOnClickListener{
+        binding.endTimeInput.setOnClickListener {
             showDatePickerDialog(false)
         }
-
 
         binding.submitButton.setOnClickListener {
             val title = binding.titleInput.text.toString()
             val description = binding.descriptionInput.text.toString()
             val location = binding.locationInput.text.toString()
 
-            val summary = """
-                Title: $title
-                Description: $description
-                Location: $location
-                From: $startDate
-                To: $endDate
-            """.trimIndent()
+            if (startDate.isEmpty() || endDate.isEmpty() || title.isEmpty()) {
+                Toast.makeText(requireContext(), "Please enter title and select start & end times", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
 
-            showCustomToast(summary)
+            val accessToken = (activity as? MainActivity)?.accessToken
+            if (accessToken == null) {
+                Toast.makeText(requireContext(), "No access token available. Please sign in.", Toast.LENGTH_LONG).show()
+                return@setOnClickListener
+            }
+
+            // Convert date strings to RFC3339 format for Google Calendar
+            val startDateTimeRFC3339 = convertToRFC3339(startDate)
+            val endDateTimeRFC3339 = convertToRFC3339(endDate)
+
+            if (startDateTimeRFC3339 == null || endDateTimeRFC3339 == null) {
+                Toast.makeText(requireContext(), "Invalid date/time format", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            // Call the create event function
+            GoogleAPIManager.createCalendarEvent(
+                accessToken = accessToken,
+                title = "DateMate: $title",
+                description = description,
+                location = location,
+                startDateTime = startDateTimeRFC3339,
+                endDateTime = endDateTimeRFC3339
+            ) { success, response ->
+                activity?.runOnUiThread {
+                    if (success) {
+                        showCustomToast("Event created successfully!")
+                    } else {
+                        showCustomToast("Failed to create event.")
+                        Log.e("HomeFragment", "Create event failed: $response")
+                    }
+                }
+            }
         }
     }
 
     private fun showDatePickerDialog(isStartTime: Boolean) {
         val calendar = Calendar.getInstance()
-
-        // DatePickerDialog setup
         val dateSetListener = DatePickerDialog.OnDateSetListener { _, year, month, dayOfMonth ->
-            // Set the date based on user input
             val date = "$year-${month + 1}-$dayOfMonth"
-
             showTimePickerDialog(isStartTime, date)
         }
 
-        val datePickerDialog = DatePickerDialog(
-            requireContext(), dateSetListener,
+        DatePickerDialog(
+            requireContext(),
+            dateSetListener,
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
             calendar.get(Calendar.DAY_OF_MONTH)
-        )
-        datePickerDialog.show()
+        ).show()
     }
 
     private fun showTimePickerDialog(isStartTime: Boolean, date: String) {
         val calendar = Calendar.getInstance()
-
-        // TimePickerDialog setup
         val timeSetListener = TimePickerDialog.OnTimeSetListener { _, hourOfDay, minute ->
-            val time = "$hourOfDay:$minute"
+            val time = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute)
             val fullDateTime = "$date $time"
 
             if (isStartTime) {
@@ -104,39 +123,43 @@ class HomeFragment : Fragment() {
             }
         }
 
-        val timePickerDialog = TimePickerDialog(
-            requireContext(), timeSetListener,
+        TimePickerDialog(
+            requireContext(),
+            timeSetListener,
             calendar.get(Calendar.HOUR_OF_DAY),
             calendar.get(Calendar.MINUTE),
             true
-        )
-        timePickerDialog.show()
+        ).show()
+    }
+
+    private fun convertToRFC3339(dateTime: String): String? {
+        // Input example: "2025-5-21 14:30"
+        return try {
+            val inputFormat = SimpleDateFormat("yyyy-M-d HH:mm", Locale.getDefault())
+            val date = inputFormat.parse(dateTime)
+            val outputFormat = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", Locale.getDefault())
+            outputFormat.timeZone = java.util.TimeZone.getTimeZone("UTC")
+            date?.let { outputFormat.format(it) }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
     }
 
     private fun showCustomToast(message: String) {
-        // Create the Toast
         val toast = Toast(requireContext())
         toast.duration = Toast.LENGTH_LONG
 
-        // Create a TextView and set it as the toast view
-        val toastText = TextView(requireContext())
-        toastText.text = message
-        toastText.setPadding(16, 16, 16, 16)  // Add padding for better readability
-        toastText.setBackgroundColor(Color.BLACK)  // Set background color to black
-        toastText.setTextColor(Color.WHITE)  // Set text color to white
+        val toastText = TextView(requireContext()).apply {
+            text = message
+            setPadding(16, 16, 16, 16)
+            setBackgroundColor(Color.BLACK)
+            setTextColor(Color.WHITE)
+        }
 
-        // Ensure that LayoutParams is set
-        val params = toastText.layoutParams ?: ViewGroup.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT)
-
-        // Optional: Set maximum width for the TextView
-        val maxWidth = 800  // You can adjust this value depending on your screen size
-        params.width = maxWidth
-        toastText.layoutParams = params
-
-        toast.view = toastText  // Set the custom TextView as the toast view
+        toast.view = toastText
         toast.show()
     }
-
 
     override fun onDestroyView() {
         super.onDestroyView()

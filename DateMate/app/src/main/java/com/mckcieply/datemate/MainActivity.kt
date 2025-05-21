@@ -53,7 +53,7 @@ class MainActivity : AppCompatActivity() {
         // Configure sign-in to request the user's ID, email address, and basic profile.
         val gso = GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
             .requestEmail()
-            .requestScopes(Scope("https://www.googleapis.com/auth/calendar.readonly"))
+            .requestScopes(Scope("https://www.googleapis.com/auth/calendar.events"))
             .requestServerAuthCode(getString(R.string.web_client_id), true)
             .build()
 
