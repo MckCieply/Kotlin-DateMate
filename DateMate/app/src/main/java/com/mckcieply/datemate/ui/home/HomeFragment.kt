@@ -65,11 +65,16 @@ class HomeFragment : Fragment() {
      */
     private fun handleSubmit() {
         val title = binding.titleInput.text.toString()
-        val description = binding.descriptionInput.text.toString()
+        var description = binding.descriptionInput.text.toString()
         val location = binding.locationInput.text.toString()
         val startDateTimeRFC3339 = startDate.toRFC3339() ?: return showInvalidDateToast()
         val endDateTimeRFC3339 = endDate.toRFC3339() ?: return showInvalidDateToast()
 
+        if(description.length == 0){
+            val idea = GiftIdeas().getRandomGiftIdea()
+            description = "Gift Idea: $idea"
+        }
+        
         if (!validateInputs(title)) return
 
         GoogleAPIManager.createCalendarEvent(
