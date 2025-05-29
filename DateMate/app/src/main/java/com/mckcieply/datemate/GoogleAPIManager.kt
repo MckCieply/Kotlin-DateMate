@@ -135,4 +135,58 @@ object GoogleAPIManager {
             }
         })
     }
+
+    fun createAllDayCalendarEvent(
+        title: String,
+        description: String,
+        location: String,
+        startDate: String, // Format: "yyyy-MM-dd"
+        endDate: String,   // Format: "yyyy-MM-dd" (exclusive end date)
+        callback: (Boolean, String?) -> Unit
+    ) {
+        val url = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
+
+        val eventJson = JSONObject().apply {
+            put("summary", "DateMate: $title")
+            put("description", description)
+            put("location", location)
+            put("start", JSONObject().apply {
+                put("date", startDate) // All-day event date format
+            })
+            put("end", JSONObject().apply {
+                put("date", endDate) // Exclusive end date
+            })
+        }
+
+        val requestBody = RequestBody.create(
+            "application/json; charset=utf-8".toMediaTypeOrNull(),
+            eventJson.toString()
+        )
+
+        val request = Request.Builder()
+            .url(url)
+            .addHeader("Authorization", "Bearer $accessToken")
+            .addHeader("Content-Type", "application/json")
+            .post(requestBody)
+            .build()
+
+        OkHttpClient().newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                e.printStackTrace()
+                callback(false, e.message)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    if (it.isSuccessful) {
+                        callback(true, it.body?.string())
+                    } else {
+                        callback(false, it.body?.string())
+                    }
+                }
+            }
+        })
+    }
+
+
 }

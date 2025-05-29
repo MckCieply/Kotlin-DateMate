@@ -13,33 +13,19 @@
 
         <EditText
             android:id="@+id/titleInput"
-            android:hint="Event Title"
+            android:hint="Title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
         <EditText
             android:id="@+id/descriptionInput"
-            android:hint="Description"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
-
-        <EditText
-            android:id="@+id/locationInput"
-            android:hint="Location"
+            android:hint="Gift Idea"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
         <EditText
             android:id="@+id/startTimeInput"
-            android:hint="Start Time (e.g., 2025-04-26T10:00)"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:focusable="false"
-            android:clickable="true"/>
-
-        <EditText
-            android:id="@+id/endTimeInput"
-            android:hint="End Time (e.g., 2025-04-26T11:00)"
+            android:hint="Date"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:focusable="false"
