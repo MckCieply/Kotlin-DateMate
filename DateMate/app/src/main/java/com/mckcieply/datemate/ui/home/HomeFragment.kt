@@ -68,6 +68,7 @@ class HomeFragment : Fragment() {
     private fun handleSubmit() {
         val title = binding.titleInput.text.toString()
         var description = binding.descriptionInput.text.toString()
+        var notifications = binding.notificationsSwitch.isChecked
         val location = ""
 
         if (description.isEmpty()) {
@@ -85,6 +86,7 @@ class HomeFragment : Fragment() {
             location = location,
             startDate = selectedDate,
             endDate = endDate,
+            notifications = notifications,
             callback = ::handleEventResult
         )
     }

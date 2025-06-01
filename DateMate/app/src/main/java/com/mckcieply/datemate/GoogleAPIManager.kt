@@ -3,6 +3,7 @@ package com.mckcieply.datemate
 import android.util.Log
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
+import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
 
@@ -140,8 +141,9 @@ object GoogleAPIManager {
         title: String,
         description: String,
         location: String,
-        startDate: String, // Format: "yyyy-MM-dd"
-        endDate: String,   // Format: "yyyy-MM-dd" (exclusive end date)
+        startDate: String,
+        endDate: String,
+        notifications: Boolean = false,
         callback: (Boolean, String?) -> Unit
     ) {
         val url = "https://www.googleapis.com/calendar/v3/calendars/primary/events"
@@ -156,6 +158,23 @@ object GoogleAPIManager {
             put("end", JSONObject().apply {
                 put("date", endDate) // Exclusive end date
             })
+
+                put("reminders", JSONObject().apply {
+                    put("useDefault", false) // disable default reminders
+                    if(notifications) {
+                        put("overrides", JSONArray().apply {
+                            put(JSONObject().apply {
+                                put("method", "popup")
+                                put("minutes", 1 * 1440) // Day before
+                            })
+                            put(JSONObject().apply {
+                                put("method", "popup")
+                                put("minutes", 6 * 1440) // 7 days before
+                            })
+                        })
+                    }
+                })
+
         }
 
         val requestBody = RequestBody.create(
