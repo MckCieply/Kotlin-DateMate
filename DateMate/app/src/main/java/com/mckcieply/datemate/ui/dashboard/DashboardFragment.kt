@@ -5,6 +5,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.fragment.app.Fragment
 import com.mckcieply.datemate.CalendarEventModel
@@ -58,16 +59,35 @@ class DashboardFragment : Fragment() {
                     activity?.runOnUiThread {
                         binding.linearLayoutContainer.removeAllViews()
                         for (event in events) {
+                            val eventLayout = LinearLayout(requireContext()).apply {
+                                orientation = LinearLayout.HORIZONTAL
+                                setPadding(8, 8, 8, 8)
+                            }
                             val textView = TextView(requireContext()).apply {
                                 text = """
-                                    🔹 ${event.summary}
-                                    🕒 ${event.startTime}
-                                    📝 ${event.description ?: "No ideas"}
-                                """.trimIndent()
+                            🔹 ${event.summary}
+                            🕒 ${event.startTime}
+                            📝 ${event.description ?: "No ideas"}
+                        """.trimIndent()
                                 textSize = 16f
                                 setPadding(16, 16, 16, 16)
                             }
-                            binding.linearLayoutContainer.addView(textView)
+
+                            val removeButton = TextView(requireContext()).apply {
+                                text = "❌"
+                                textSize = 18f
+                                setPadding(16, 0, 0, 0)
+                                setOnClickListener {
+                                    binding.linearLayoutContainer.removeView(eventLayout)
+                                    // TODO: Optionally remove from source (e.g., API, DB)
+                                    Log.d("DashboardFragment", "Removed event: ${event.summary}")
+                                }
+                            }
+
+                            eventLayout.addView(textView)
+                            eventLayout.addView(removeButton)
+                            binding.linearLayoutContainer.addView(eventLayout)
+
                         }
                     }
                 } catch (e: Exception) {
