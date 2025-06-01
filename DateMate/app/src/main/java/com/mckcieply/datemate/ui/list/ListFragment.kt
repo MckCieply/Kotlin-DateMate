@@ -1,4 +1,4 @@
-package com.mckcieply.datemate.ui.dashboard
+package com.mckcieply.datemate.ui.list
 
 import android.os.Bundle
 import android.util.Log
@@ -14,7 +14,7 @@ import com.mckcieply.datemate.databinding.FragmentDashboardBinding
 import org.json.JSONArray
 import org.json.JSONObject
 
-class DashboardFragment : Fragment() {
+class ListFragment : Fragment() {
 
     private var _binding: FragmentDashboardBinding? = null
     private val binding get() = _binding!!
