@@ -77,8 +77,8 @@ object GoogleAPIManager {
 
             override fun onResponse(call: Call, response: Response) {
                 val result = response.body?.string() ?: "Empty response"
-                Log.d("GoogleAPIManager", "Calendar API response: $result")
-                onResult(result)
+                val filteredResult = filterDateMateEvents(result)
+                onResult(filteredResult)
             }
         })
     }
@@ -186,6 +186,30 @@ object GoogleAPIManager {
                 }
             }
         })
+    }
+
+    private fun filterDateMateEvents(jsonResponse: String): String {
+        return try {
+            val json = JSONObject(jsonResponse)
+            val items = json.getJSONArray("items")
+            val filteredEvents = mutableListOf<JSONObject>()
+
+            for (i in 0 until items.length()) {
+                val event = items.getJSONObject(i)
+                val title = event.optString("summary", "")
+                if (title.startsWith("DateMate:")) {
+                    filteredEvents.add(event)
+                }
+            }
+
+            JSONObject().apply {
+                put("filteredEvents", filteredEvents)
+            }.toString()
+
+        } catch (e: Exception) {
+            Log.e("GoogleAPIManager", "Error filtering events", e)
+            "{\"error\": \"Failed to parse or filter events\"}"
+        }
     }
 
 

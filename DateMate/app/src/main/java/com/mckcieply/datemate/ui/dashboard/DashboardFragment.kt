@@ -10,8 +10,8 @@ import androidx.fragment.app.Fragment
 import com.mckcieply.datemate.CalendarEventModel
 import com.mckcieply.datemate.GoogleAPIManager
 import com.mckcieply.datemate.databinding.FragmentDashboardBinding
+import org.json.JSONArray
 import org.json.JSONObject
-import kotlin.math.log
 
 class DashboardFragment : Fragment() {
 
@@ -39,7 +39,8 @@ class DashboardFragment : Fragment() {
                 try {
                     val events = mutableListOf<CalendarEventModel>()
                     val json = JSONObject(response)
-                    val items = json.getJSONArray("items")
+                    val filteredEventsString = json.getString("filteredEvents")
+                    val items = JSONArray(filteredEventsString)
 
                     for (i in 0 until items.length()) {
                         val item = items.getJSONObject(i)
@@ -61,8 +62,7 @@ class DashboardFragment : Fragment() {
                                 text = """
                                     🔹 ${event.summary}
                                     🕒 ${event.startTime}
-                                    📍 ${event.location ?: "N/A"}
-                                    📝 ${event.description ?: "None"}
+                                    📝 ${event.description ?: "No ideas"}
                                 """.trimIndent()
                                 textSize = 16f
                                 setPadding(16, 16, 16, 16)
