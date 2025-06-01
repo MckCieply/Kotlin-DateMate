@@ -71,6 +71,8 @@ class ListFragment : Fragment() {
                         """.trimIndent()
                                 textSize = 16f
                                 setPadding(16, 16, 16, 16)
+                                setTextColor(resources.getColor(android.R.color.black, null))
+
                             }
 
                             val removeButton = TextView(requireContext()).apply {
