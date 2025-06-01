@@ -231,5 +231,34 @@ object GoogleAPIManager {
         }
     }
 
+    fun deleteCalendarEvent(eventId: String, callback: (Boolean) -> Unit) {
+        val accessToken = getAccessToken()
+        if (accessToken == null) {
+            callback(false)
+            return
+        }
+
+        val url = "https://www.googleapis.com/calendar/v3/calendars/primary/events/$eventId"
+
+        val request = Request.Builder()
+            .url(url)
+            .delete()
+            .addHeader("Authorization", "Bearer $accessToken")
+            .build()
+
+        val client = OkHttpClient()
+        client.newCall(request).enqueue(object : Callback {
+            override fun onFailure(call: Call, e: IOException) {
+                Log.e("GoogleAPIManager", "Failed to delete event", e)
+                callback(false)
+            }
+
+            override fun onResponse(call: Call, response: Response) {
+                response.use {
+                    callback(response.isSuccessful)
+                }
+            }
+        })
+    }
 
 }

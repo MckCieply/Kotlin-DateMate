@@ -45,14 +45,14 @@ class DashboardFragment : Fragment() {
 
                     for (i in 0 until items.length()) {
                         val item = items.getJSONObject(i)
-
+                        val eventId = item.getString("id") // <-- Add this
                         val summary = item.optString("summary", "No Title")
                         val start = item.getJSONObject("start")
                         val startTime = start.optString("dateTime", start.optString("date", "Unknown start time"))
                         val location = item.optString("location", null)
                         val description = item.optString("description", null)
 
-                        events.add(CalendarEventModel(summary, startTime, location, description))
+                        events.add(CalendarEventModel(eventId, summary, startTime, location, description))
                     }
 
                     // Update UI
@@ -78,9 +78,16 @@ class DashboardFragment : Fragment() {
                                 textSize = 18f
                                 setPadding(16, 0, 0, 0)
                                 setOnClickListener {
-                                    binding.linearLayoutContainer.removeView(eventLayout)
-                                    // TODO: Optionally remove from source (e.g., API, DB)
-                                    Log.d("DashboardFragment", "Removed event: ${event.summary}")
+                                    GoogleAPIManager.deleteCalendarEvent(event.eventId) { success ->
+                                        if (success) {
+                                            activity?.runOnUiThread {
+                                                binding.linearLayoutContainer.removeView(eventLayout)
+                                            }
+                                            Log.d("DashboardFragment", "Successfully deleted: ${event.summary}")
+                                        } else {
+                                            Log.e("DashboardFragment", "Failed to delete: ${event.summary}")
+                                        }
+                                    }
                                 }
                             }
 
