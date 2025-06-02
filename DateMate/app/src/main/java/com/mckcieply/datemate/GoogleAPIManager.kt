@@ -213,24 +213,40 @@ object GoogleAPIManager {
         return try {
             val json = JSONObject(jsonResponse)
             val items = json.getJSONArray("items")
-            val filteredEvents = mutableListOf<JSONObject>()
+            val upcomingEvents = mutableListOf<Pair<LocalDate, JSONObject>>()
+
+            val today = LocalDate.now()
 
             for (i in 0 until items.length()) {
                 val event = items.getJSONObject(i)
                 val title = event.optString("summary", "")
-                if (title.startsWith("DateMate:")) {
-                    filteredEvents.add(event)
-                    val date = event.optJSONObject("start")?.optString("date", "")
-                    Log.d("GoogleAPIManager", "Event: $date")
-                    notifyIfEventIsTomorrow(context, date ?: "", title)
 
+                if (title.startsWith("DateMate:")) {
+                    val startObj = event.optJSONObject("start")
+                    val dateStr = startObj?.optString("date") ?: startObj?.optString("dateTime")?.substring(0, 10)
+
+                    try {
+                        val eventDate = LocalDate.parse(dateStr)
+                        if (!eventDate.isBefore(today)) {
+                            notifyIfEventIsTomorrow(context, dateStr.toString(), title)
+                            upcomingEvents.add(eventDate to event)
+                        }
+                    } catch (e: Exception) {
+                        Log.e("GoogleAPIManager", "Invalid event date: $dateStr", e)
+                    }
                 }
             }
 
-            JSONObject().apply {
-                put("filteredEvents", filteredEvents)
-            }.toString()
+            // Sort by event date
+            val sortedEvents = upcomingEvents.sortedBy { it.first }.map { it.second }
 
+            val resultJson = JSONObject().apply {
+                put("filteredEvents", JSONArray().apply {
+                    sortedEvents.forEach { put(it) }
+                })
+            }
+
+            resultJson.toString()
         } catch (e: Exception) {
             Log.e("GoogleAPIManager", "Error filtering events", e)
             "{\"error\": \"Failed to parse or filter events\"}"
