@@ -1,6 +1,7 @@
 package com.mckcieply.datemate.ui.list
 
 import android.os.Bundle
+import android.text.Html
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
@@ -46,7 +47,7 @@ class ListFragment : Fragment() {
 
                     for (i in 0 until items.length()) {
                         val item = items.getJSONObject(i)
-                        val eventId = item.getString("id") // <-- Add this
+                        val eventId = item.getString("id")
                         val summary = item.optString("summary", "No Title")
                         val start = item.getJSONObject("start")
                         val startTime = start.optString("dateTime", start.optString("date", "Unknown start time"))
@@ -64,22 +65,29 @@ class ListFragment : Fragment() {
                                 orientation = LinearLayout.HORIZONTAL
                                 setPadding(8, 8, 8, 8)
                             }
+
+                            val formattedText = """
+                                <b><big>🔹 ${event.summary}</big></b><br>
+                                🕒 ${event.startTime}<br>
+                                📝 ${event.description ?: "No ideas"}
+                            """.trimIndent()
+
                             val textView = TextView(requireContext()).apply {
-                                text = """
-                            🔹 ${event.summary}
-                            🕒 ${event.startTime}
-                            📝 ${event.description ?: "No ideas"}
-                        """.trimIndent()
+                                text = Html.fromHtml(formattedText, Html.FROM_HTML_MODE_LEGACY)
                                 textSize = 16f
                                 setPadding(16, 16, 16, 16)
                                 setTextColor(resources.getColor(android.R.color.black, null))
-
+                                layoutParams = LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f)
                             }
 
                             val removeButton = TextView(requireContext()).apply {
                                 text = "❌"
                                 textSize = 18f
-                                setPadding(16, 0, 0, 0)
+                                setPadding(16, 0, 16, 0)
+                                layoutParams = LinearLayout.LayoutParams(
+                                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                                    LinearLayout.LayoutParams.WRAP_CONTENT
+                                )
                                 setOnClickListener {
                                     GoogleAPIManager.deleteCalendarEvent(event.eventId) { success ->
                                         if (success) {
@@ -98,7 +106,6 @@ class ListFragment : Fragment() {
                             eventLayout.addView(textView)
                             eventLayout.addView(removeButton)
                             binding.linearLayoutContainer.addView(eventLayout)
-
                         }
                     }
                 } catch (e: Exception) {
@@ -112,8 +119,8 @@ class ListFragment : Fragment() {
     }
 
     private fun showError(message: String) {
-
-        }
+        showCustomToast(requireContext(), message)
+    }
 
     override fun onDestroyView() {
         super.onDestroyView()
