@@ -72,7 +72,10 @@ class HomeFragment : Fragment() {
         if (description.isEmpty()) {
             val idea = GiftIdeas().getRandomGiftIdea()
             description = "Gift Idea: $idea"
+        } else{
+            description = "Gift Idea: $description"
         }
+
 
         if (!validateInputs(title)) return
 
