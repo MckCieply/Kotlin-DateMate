@@ -106,6 +106,8 @@ class HomeFragment : Fragment() {
             )
             if (!success) {
                 Log.e("HomeFragment", "Create event failed: $response")
+            } else{
+                clearForm()
             }
         }
     }
@@ -127,5 +129,13 @@ class HomeFragment : Fragment() {
         } catch (e: Exception) {
             this
         }
+    }
+
+    private fun clearForm() {
+        binding.titleInput.text?.clear()
+        binding.descriptionInput.text?.clear()
+        binding.startTimeInput.text?.clear()
+        binding.notificationsSwitch.isChecked = false
+        selectedDate = ""
     }
 }
