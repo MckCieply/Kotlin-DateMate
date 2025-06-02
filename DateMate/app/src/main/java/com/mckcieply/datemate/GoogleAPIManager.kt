@@ -1,11 +1,13 @@
 package com.mckcieply.datemate
 
+import android.content.Context
 import android.util.Log
 import okhttp3.*
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import org.json.JSONArray
 import org.json.JSONObject
 import java.io.IOException
+import java.time.LocalDate
 
 object GoogleAPIManager {
 
@@ -63,7 +65,7 @@ object GoogleAPIManager {
         })
     }
 
-    fun fetchCalendarEvent( onResult: (String) -> Unit) {
+    fun fetchCalendarEvent(context: Context, onResult: (String) -> Unit) {
         val request = Request.Builder()
             .url("https://www.googleapis.com/calendar/v3/calendars/primary/events")
             .addHeader("Authorization", "Bearer ${accessToken}")
@@ -78,7 +80,7 @@ object GoogleAPIManager {
 
             override fun onResponse(call: Call, response: Response) {
                 val result = response.body?.string() ?: "Empty response"
-                val filteredResult = filterDateMateEvents(result)
+                val filteredResult = filterDateMateEvents(context, result)
                 onResult(filteredResult)
             }
         })
@@ -207,7 +209,7 @@ object GoogleAPIManager {
         })
     }
 
-    private fun filterDateMateEvents(jsonResponse: String): String {
+    private fun filterDateMateEvents(context: Context, jsonResponse: String): String {
         return try {
             val json = JSONObject(jsonResponse)
             val items = json.getJSONArray("items")
@@ -218,6 +220,10 @@ object GoogleAPIManager {
                 val title = event.optString("summary", "")
                 if (title.startsWith("DateMate:")) {
                     filteredEvents.add(event)
+                    val date = event.optJSONObject("start")?.optString("date", "")
+                    Log.d("GoogleAPIManager", "Event: $date")
+                    notifyIfEventIsTomorrow(context, date ?: "", title)
+
                 }
             }
 
@@ -259,6 +265,20 @@ object GoogleAPIManager {
                 }
             }
         })
+    }
+
+    fun notifyIfEventIsTomorrow(context: Context, dateString: String, title: String) {
+        try {
+            val eventDate = LocalDate.parse(dateString)
+            val tomorrow = LocalDate.now().plusDays(1)
+
+            if (eventDate == tomorrow) {
+                val helper = NotificationHelper(context)
+                helper.showNotification("Upcoming DateMate: ${title.removePrefix("DateMate:").trim()}", "Have you forgotten?")
+            }
+        } catch (e: Exception) {
+            Log.e("DateMate", "Invalid date: $dateString, error: $e")
+        }
     }
 
 }

@@ -35,11 +35,7 @@ class MainActivity : AppCompatActivity() {
 
     private val requestPermissionLauncher =
         registerForActivityResult(ActivityResultContracts.RequestPermission()) { isGranted ->
-            if (isGranted) {
-                // Permission granted, show notification or whatever
-            } else {
-                // Permission denied
-            }
+
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -96,9 +92,6 @@ class MainActivity : AppCompatActivity() {
                         accessToken = token
                         GoogleAPIManager.setAccessToken(token)
                         Log.d("MainActivity", "Access token received: $token")
-                        GoogleAPIManager.fetchCalendarEvent() { result ->
-                            Log.d("CalendarEvents", result)
-                        }
                     } else {
                         Log.e("MainActivity", "Failed to retrieve access token")
                     }

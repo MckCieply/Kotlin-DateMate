@@ -36,7 +36,7 @@ class ListFragment : Fragment() {
         val accessToken = GoogleAPIManager.getAccessToken()
 
         if (accessToken != null) {
-            GoogleAPIManager.fetchCalendarEvent { response ->
+            GoogleAPIManager.fetchCalendarEvent(requireContext()) { response ->
                 try {
                     val events = mutableListOf<CalendarEventModel>()
                     val json = JSONObject(response)
