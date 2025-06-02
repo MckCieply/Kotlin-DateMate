@@ -11,6 +11,7 @@ import androidx.fragment.app.Fragment
 import com.mckcieply.datemate.CalendarEventModel
 import com.mckcieply.datemate.GoogleAPIManager
 import com.mckcieply.datemate.databinding.FragmentDashboardBinding
+import com.mckcieply.datemate.ToastHelper.showCustomToast
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -85,6 +86,7 @@ class ListFragment : Fragment() {
                                             activity?.runOnUiThread {
                                                 binding.linearLayoutContainer.removeView(eventLayout)
                                             }
+                                            showCustomToast(requireContext(), "Event deleted successfully")
                                             Log.d("DashboardFragment", "Successfully deleted: ${event.summary}")
                                         } else {
                                             Log.e("DashboardFragment", "Failed to delete: ${event.summary}")

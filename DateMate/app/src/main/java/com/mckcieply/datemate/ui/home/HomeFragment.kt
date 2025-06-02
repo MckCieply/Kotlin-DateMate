@@ -1,17 +1,15 @@
 package com.mckcieply.datemate.ui.home
 
 import android.app.DatePickerDialog
-import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.TextView
-import android.widget.Toast
 import androidx.fragment.app.Fragment
 import com.mckcieply.datemate.GoogleAPIManager
 import com.mckcieply.datemate.databinding.FragmentHomeBinding
+import com.mckcieply.datemate.ToastHelper.showCustomToast
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Locale
@@ -93,29 +91,14 @@ class HomeFragment : Fragment() {
 
     private fun validateInputs(title: String): Boolean {
         return if (selectedDate.isEmpty() || title.isEmpty()) {
-            showCustomToast("Please enter a title and select a date")
+            showCustomToast(requireContext(), "Please enter a title and select a date")
             false
         } else true
     }
 
-    private fun showCustomToast(message: String) {
-        val toast = Toast(requireContext())
-        toast.duration = Toast.LENGTH_LONG
-
-        val toastText = TextView(requireContext()).apply {
-            text = message
-            setPadding(16, 16, 16, 16)
-            setBackgroundColor(Color.BLACK)
-            setTextColor(Color.WHITE)
-        }
-
-        toast.view = toastText
-        toast.show()
-    }
-
     private fun handleEventResult(success: Boolean, response: String?) {
         activity?.runOnUiThread {
-            showCustomToast(
+            showCustomToast(requireContext(),
                 if (success) "Event created successfully!" else "Failed to create event."
             )
             if (!success) {
